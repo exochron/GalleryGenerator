@@ -13,12 +13,15 @@ local backScreen
 ---@param shotHandlers table List of Preparation Functions
 ---@param doneHandler nil|function optional Function to cleanup your UI after the last Screenshot was taken.
 function GalleryGenerator:TakeScreenshots(shotHandlers, doneHandler)
+
+    ---@class GalleryGeneratorApi: { Point: function, Point: function, Click: function, PointAndClick: function, Wait: function, Continue: function, BackScreen: function }
+    local internalAPI = {}
+
     local previousQuality = C_CVar.GetCVar("screenshotQuality")
     if previousQuality ~= "10" then
+        -- Set quality to max to also get rid of hidden watermark.
         C_CVar.SetCVar("screenshotQuality", 10)
     end
-
-    local internalAPI = {}
 
     local isInterrupted = false
     local function shoot()
@@ -27,18 +30,6 @@ function GalleryGenerator:TakeScreenshots(shotHandlers, doneHandler)
                 Screenshot()
             end
         end)
-    end
-
-    local function onDone()
-        cursor:UnregisterAllEvents()
-
-        if previousQuality ~= "10" then
-            C_CVar.SetCVar("screenshotQuality", previousQuality)
-        end
-
-        if doneHandler then
-            doneHandler(internalAPI)
-        end
     end
 
     --- This places a virtual pointer icon central on the given frame.
@@ -139,14 +130,42 @@ function GalleryGenerator:TakeScreenshots(shotHandlers, doneHandler)
         cursor:Hide()
     end
 
+    local function cleanup()
+        cursor:Hide()
+        if backScreen then
+            backScreen:Hide()
+        end
+    end
+
+    local function onDone()
+        cleanup()
+        cursor:UnregisterAllEvents()
+
+        if previousQuality ~= "10" then
+            C_CVar.SetCVar("screenshotQuality", previousQuality)
+        end
+
+        if doneHandler then
+            doneHandler(internalAPI)
+        end
+    end
+
     local currentIndex
 
     local function proceed()
         local currentHandler
         currentIndex, currentHandler = next(shotHandlers, currentIndex)
         if currentIndex and currentHandler then
-            currentHandler(internalAPI)
-            shoot()
+            if type(currentHandler) == "function" then
+                cleanup()
+                if xpcall(currentHandler, CallErrorHandler, internalAPI) then
+                    shoot()
+                else
+                    onDone()
+                end
+            else
+                proceed()
+            end
         else
             onDone()
         end
@@ -155,11 +174,6 @@ function GalleryGenerator:TakeScreenshots(shotHandlers, doneHandler)
     cursor:RegisterEvent("SCREENSHOT_SUCCEEDED")
     cursor:RegisterEvent("SCREENSHOT_FAILED")
     cursor:SetScript("OnEvent", function(_, event)
-        cursor:Hide()
-        if backScreen then
-            backScreen:Hide()
-        end
-
         if event == "SCREENSHOT_SUCCEEDED" then
             proceed()
         else
