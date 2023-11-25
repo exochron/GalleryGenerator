@@ -1,0 +1,10 @@
+required-dependencies:
+    - libstub
+
+ignore:
+    - LICENSE
+    - Tests
+
+license-output: LICENSE
+
+enable-nolib-creation: no
