@@ -1,0 +1,13 @@
+## Interface: 100200
+## Title: Gallery Generator
+## Notes: Generate consistent screenshots for your image gallery
+## Author: eXochron
+## Version: @project-version@
+## X-Curse-Project-ID: 942609
+## X-Wago-ID: b6XV80Gp
+
+api.lua
+
+#@do-not-package@
+Tests\example.lua
+#@end-do-not-package@
