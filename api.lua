@@ -1,10 +1,12 @@
 
 assert(LibStub, "LibStub is not installed!")
 
-local MINOR = 1
+local MINOR = 2
 local GalleryGenerator = LibStub:NewLibrary("GalleryGenerator", MINOR)
 ---@class GalleryGenerator: { TakeScreenshots: function }
 if not GalleryGenerator then return end
+
+local DELAY = 1.0
 
 local cursor
 local backScreen
@@ -16,6 +18,7 @@ function GalleryGenerator:TakeScreenshots(shotHandlers, doneHandler)
 
     ---@class GalleryGeneratorApi: { Point: function, Point: function, Click: function, PointAndClick: function, Wait: function, Continue: function, BackScreen: function }
     local internalAPI = {}
+    local cleanupQueue = {}
 
     local previousQuality = C_CVar.GetCVar("screenshotQuality")
     if previousQuality ~= "10" then
@@ -25,7 +28,7 @@ function GalleryGenerator:TakeScreenshots(shotHandlers, doneHandler)
 
     local isInterrupted = false
     local function shoot()
-        C_Timer.After(1, function()
+        C_Timer.After(DELAY, function()
             if not isInterrupted then
                 Screenshot()
             end
@@ -56,9 +59,9 @@ function GalleryGenerator:TakeScreenshots(shotHandlers, doneHandler)
             end
         end
         bubbleEvent(targetFrame, "OnEnter")
-        C_Timer.After(1.1, function()
+        cleanupQueue[#cleanupQueue+1] = function()
             bubbleEvent(targetFrame, "OnLeave")
-        end)
+        end
 
         return cursor.tex
     end
@@ -135,6 +138,11 @@ function GalleryGenerator:TakeScreenshots(shotHandlers, doneHandler)
         if backScreen then
             backScreen:Hide()
         end
+        for _, handler in ipairs(cleanupQueue) do
+            handler()
+        end
+        cleanupQueue = {}
+        CloseDropDownMenus()
     end
 
     local function onDone()
