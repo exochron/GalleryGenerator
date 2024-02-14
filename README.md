@@ -35,6 +35,10 @@ gg:TakeScreenshots(
     end
 )
 ```
+More practical examples can be found here:
+- [Favorite Contacts](https://github.com/exochron/Favorite-Contacts/blob/master/DevZone/Screenshot.lua)
+- [Mount Journal Enhanced](https://github.com/exochron/MountJournalEnhanced/blob/master/DevZone/Screenshot.lua)
+- [Toy Box Enhanced](https://github.com/exochron/ToyBoxEnhanced/blob/master/DevZone/Screenshot.lua)
 
 ## API
 
