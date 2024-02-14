@@ -20,10 +20,19 @@ function GalleryGenerator:TakeScreenshots(shotHandlers, doneHandler)
     local internalAPI = {}
     local cleanupQueue = {}
 
-    local previousQuality = C_CVar.GetCVar("screenshotQuality")
-    if previousQuality ~= "10" then
-        -- Set quality to max to also get rid of hidden watermark.
-        C_CVar.SetCVar("screenshotQuality", 10)
+    local defaultCVars = {
+        screenshotQuality = 10, -- Set quality to max to also get rid of hidden watermark.
+        Contrast = C_CVar.GetCVarDefault("Contrast"),
+        Gamma = C_CVar.GetCVarDefault("Gamma"),
+        Brightness = C_CVar.GetCVarDefault("Brightness"),
+    }
+    local previousCVars = {}
+    for cvar, defaultVal in pairs(defaultCVars) do
+        local val = C_CVar.GetCVar(cvar)
+        if nil ~= val then
+            previousCVars[cvar] = tonumber(val)
+        end
+        C_CVar.SetCVar(cvar, defaultVal)
     end
 
     local isInterrupted = false
@@ -149,8 +158,8 @@ function GalleryGenerator:TakeScreenshots(shotHandlers, doneHandler)
         cleanup()
         cursor:UnregisterAllEvents()
 
-        if previousQuality ~= "10" then
-            C_CVar.SetCVar("screenshotQuality", previousQuality)
+        for cvar, value in pairs(previousCVars) do
+            C_CVar.SetCVar(cvar, value)
         end
 
         if doneHandler then
