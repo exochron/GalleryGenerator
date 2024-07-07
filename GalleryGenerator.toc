@@ -1,5 +1,6 @@
-## Interface: 100200
+## Interface: 100207, 110000
 ## Title: Gallery Generator
+## IconTexture: 1109100
 ## Notes: Generate consistent screenshots for your image gallery
 ## Author: eXochron
 ## Version: @project-version@
