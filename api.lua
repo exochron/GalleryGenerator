@@ -1,7 +1,7 @@
 
 assert(LibStub, "LibStub is not installed!")
 
-local MINOR = 2
+local MINOR = 3
 local GalleryGenerator = LibStub:NewLibrary("GalleryGenerator", MINOR)
 ---@class GalleryGenerator: { TakeScreenshots: function }
 if not GalleryGenerator then return end
@@ -68,8 +68,28 @@ function GalleryGenerator:TakeScreenshots(shotHandlers, doneHandler)
             end
         end
         bubbleEvent(targetFrame, "OnEnter")
-        cleanupQueue[#cleanupQueue+1] = function()
+        table.insert(cleanupQueue, function()
             bubbleEvent(targetFrame, "OnLeave")
+        end)
+
+        -- show highlight effects on buttons
+        if targetFrame.IsEnabled and targetFrame:IsEnabled() then
+            local highlightTexture = targetFrame.GetHighlightTexture and targetFrame:GetHighlightTexture()
+            if highlightTexture then
+                local drawLayer, drawLevel = highlightTexture:GetDrawLayer()
+                highlightTexture:SetDrawLayer("ARTWORK")
+                table.insert(cleanupQueue, function()
+                    highlightTexture:SetDrawLayer(drawLayer, drawLevel)
+                end)
+            end
+            local highlightFont = targetFrame.GetHighlightFontObject and targetFrame:GetHighlightFontObject()
+            if highlightFont then
+                local normalFont = targetFrame:GetNormalFontObject()
+                targetFrame:SetNormalFontObject(highlightFont)
+                table.insert(cleanupQueue,  function()
+                    targetFrame:SetNormalFontObject(normalFont)
+                end)
+            end
         end
 
         return cursor.tex
