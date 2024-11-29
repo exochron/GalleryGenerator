@@ -1,6 +1,6 @@
 # Gallery Generator
 
-This Addon/Library is designed for developers to generate consistent screenshots for your image gallery.
+This library is designed for addon authors who wish to generate consistent screenshots for their image gallery.
 
 ## Installation
 
@@ -103,7 +103,7 @@ This shows a back screen to hide the game world.
 - You should use the english game client to take screenshots. So they are readable by probably the most users. (You can
   use a PTR client for that. ;))
 - Use the `:BackScreen()` to hide the game world and to provide a nice background color for further processing.
-- You can add your script and images into your project repository, but you should ignore them in your .pckgmeta file. So
+- You can add your script and images into your project repository, but you should ignore them in your .pkgmeta file. So
   it doesn't bloat the final zip unnecessarily.
 - After you have taken some nice shots. You can automate copying and cropping the files a bit as
   well. [Read further in the project wiki.](https://github.com/exochron/GalleryGenerator/wiki/Further-Processing)
