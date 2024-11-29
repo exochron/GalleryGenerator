@@ -1,7 +1,7 @@
 
 assert(LibStub, "LibStub is not installed!")
 
-local MINOR = 3
+local MINOR = 4
 local GalleryGenerator = LibStub:NewLibrary("GalleryGenerator", MINOR)
 ---@class GalleryGenerator: { TakeScreenshots: function }
 if not GalleryGenerator then return end
@@ -57,6 +57,11 @@ function GalleryGenerator:TakeScreenshots(shotHandlers, doneHandler)
         cursor:SetPoint("TOPLEFT", targetFrame, "CENTER", offsetX or 0, offsetY or 0)
         cursor:Show()
 
+        local originalIsMouseOver = targetFrame.IsMouseOver
+        targetFrame.IsMouseOver = function()
+            return true
+        end
+
         local function bubbleEvent(frame, event)
             local onEvent = frame:GetScript(event)
             if onEvent then
@@ -68,6 +73,9 @@ function GalleryGenerator:TakeScreenshots(shotHandlers, doneHandler)
             end
         end
         bubbleEvent(targetFrame, "OnEnter")
+        table.insert(cleanupQueue, function()
+            targetFrame.IsMouseOver = originalIsMouseOver
+        end)
         table.insert(cleanupQueue, function()
             bubbleEvent(targetFrame, "OnLeave")
         end)
@@ -171,7 +179,15 @@ function GalleryGenerator:TakeScreenshots(shotHandlers, doneHandler)
             handler()
         end
         cleanupQueue = {}
-        CloseDropDownMenus()
+
+        if MenuUtil then
+            -- Modern Menu Api
+            Menu.GetManager():CloseMenus()
+        end
+        if CloseDropDownMenus then
+            -- Legacy Menu Api
+            CloseDropDownMenus()
+        end
     end
 
     local function onDone()
