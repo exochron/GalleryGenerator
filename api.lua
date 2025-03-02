@@ -1,7 +1,7 @@
 
 assert(LibStub, "LibStub is not installed!")
 
-local MINOR = 4
+local MINOR = 5
 local GalleryGenerator = LibStub:NewLibrary("GalleryGenerator", MINOR)
 ---@class GalleryGenerator: { TakeScreenshots: function }
 if not GalleryGenerator then return end
