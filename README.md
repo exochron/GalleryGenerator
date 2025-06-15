@@ -7,8 +7,8 @@ This library is designed for addon authors who wish to generate consistent scree
 - Requires [LibStub](https://www.curseforge.com/wow/addons/libstub)
 
 Just install this as a standalone addon from [CurseForge](https://www.curseforge.com/wow/addons/gallery-generator)
-or [Wago](https://addons.wago.io/addons/gallerygenerator). You don't need to embedded or package it into you project.
-(A dependency link as a used tool is appreciated though. :) )
+or [Wago](https://addons.wago.io/addons/gallerygenerator). You don't need to embedded or package it into your project.
+A dependency link as a [used tool](https://legacy.curseforge.com/wow/addons/gallery-generator/relations/dependents) is appreciated though. :)
 
 ## Example
 
