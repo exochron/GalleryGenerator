@@ -12,26 +12,39 @@ A dependency link as a [used tool](https://legacy.curseforge.com/wow/addons/gall
 
 ## Example
 
-```
+```LUA
 local gg = LibStub("GalleryGenerator")
 gg:TakeScreenshots(
     {
+        -- First screenshot with open character frame
         function(api)
             api:BackScreen() -- hide game world with black screen
-    
-            ToggleCharacter("PaperDollFrame") -- shows character frame
-            api:PointAndClick(PaperDollFrame.ExpandButton)
+
+            ToggleCharacter("PaperDollFrame") -- show character frame
         end,
+        -- second screenshot with reputation frame
         function(api)
             api:BackScreen(0, 1, 0) -- green screen
-            api:Click(PaperDollFrame.ExpandButton) -- revert previous toggle
-    
+
             api:PointAndClick(CharacterFrameTab2)
         end,
+        -- third screenshot toggles and traverses player menu
+        function(api)
+            api:Click(CharacterFrameTab1) -- back to tab 1
+
+            -- open player menu
+            UnitPopup_OpenMenu("SELF", { fromPlayerFrame = true, unit = "player", })
+
+            -- wait for menu and point to raid markers
+            api:WaitAndPointOnMenuElement(1, 2, function()
+                --wait again and point to skull marker
+                api:WaitAndPointOnMenuElement(2, 1)
+            end)
+        end,
     },
+    -- cleanup and revert previous states
     function(api)
-        api:Click(CharacterFrameTab1)
-        ToggleCharacter("PaperDollFrame")
+        ToggleCharacter("PaperDollFrame") -- hide character frame
     end
 )
 ```
@@ -97,6 +110,25 @@ This shows a back screen to hide the game world.
 - `red nil|number` Optional red component [0.0 - 1.0]
 - `green nil|number` Optional green component [0.0 - 1.0]
 - `blue nil|number` Optional blue component [0.0 - 1.0]
+
+### `api:GetOpenMenuElement(menuIndex, elementIndex)`
+
+This returns the n-th element frame of an open menu.
+
+- `menuIndex number` Index number of open Menu (1=start menu, 2=first submenu, 3=second submenu...)
+- `elementIndex number` Index number of element from the top. Spacer and divider do count as well.
+
+### `api:WaitAndPointOnMenuElement(menuIndex, elementIndex, onDone, xOffset, yOffset)`
+
+This interrupts the execution and waits for a menu element to be rendered. It also points onto the element.
+You can chain `WaitAndPointOnMenuElement` in your `onDone` handler to traverse multiple submenus.
+You need to `Continue()` in your own `onDone` function. If you don't provide a function, it continues automatically.
+
+- `menuIndex number` Index number of open Menu (1=start menu, 2=first submenu, 3=second submenu...)
+- `elementIndex number` Index number of element from the top. Spacer and divider do count as well.
+- `onDone nil|function` Optional custom handling gets element frame as first parameter.
+- `offsetX nil|number` Optional offset right of the element center (negative for left)
+- `offsetY nil|number` Optional offset up of the element center (negative for down)
 
 ## Tips & Tricks
 

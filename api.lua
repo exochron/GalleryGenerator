@@ -1,7 +1,12 @@
 
 assert(LibStub, "LibStub is not installed!")
 
-local MINOR = 5
+--@do-not-package@
+local MINOR = 9999999
+--@end-do-not-package@
+--[===[@non-debug@
+local MINOR = @project-version@
+--@end-non-debug@]===]
 local GalleryGenerator = LibStub:NewLibrary("GalleryGenerator", MINOR)
 ---@class GalleryGenerator: { TakeScreenshots: function }
 if not GalleryGenerator then return end
@@ -10,13 +15,14 @@ local DELAY = 1.0
 
 local cursor
 local backScreen
+local openMenus
 
 ---Take multiple Screenshots of your UI
 ---@param shotHandlers table List of Preparation Functions
 ---@param doneHandler nil|function optional Function to cleanup your UI after the last Screenshot was taken.
 function GalleryGenerator:TakeScreenshots(shotHandlers, doneHandler)
 
-    ---@class GalleryGeneratorApi: { Point: function, Point: function, Click: function, PointAndClick: function, Wait: function, Continue: function, BackScreen: function }
+    ---@class GalleryGeneratorApi: { Point: function, Point: function, Click: function, PointAndClick: function, Wait: function, Continue: function, BackScreen: function, GetOpenMenuElement: function, WaitAndPointOnMenuElement: function }
     local internalAPI = {}
     local cleanupQueue = {}
 
@@ -37,11 +43,40 @@ function GalleryGenerator:TakeScreenshots(shotHandlers, doneHandler)
 
     local isInterrupted = false
     local function shoot()
-        C_Timer.After(DELAY, function()
-            if not isInterrupted then
-                Screenshot()
+        if not isInterrupted then
+            C_Timer.After(DELAY, function()
+                if not isInterrupted then
+                    Screenshot()
+                end
+            end)
+        end
+    end
+
+    if nil == openMenus then
+        openMenus = {}
+        local menuManager = Menu.GetManager()
+        if menuManager then
+            local function collectMenus(self, _, menuDescription)
+                local menu = self:GetOpenMenu()
+                if not menu then
+                    return
+                end
+
+                openMenus = {menu}
+                menuDescription:AddMenuAcquiredCallback(function(frame)
+                    openMenus[#openMenus+1] = frame
+                end)
+                menuDescription:AddMenuReleasedCallback(function()
+                    openMenus[#openMenus] = nil
+                end)
             end
-        end)
+
+            hooksecurefunc(menuManager, 'OpenMenu', collectMenus)
+            hooksecurefunc(menuManager, 'OpenContextMenu', collectMenus)
+            hooksecurefunc(menuManager, 'CloseMenus', function()
+                openMenus = {}
+            end)
+        end
     end
 
     --- This places a virtual pointer icon central on the given frame.
@@ -136,6 +171,7 @@ function GalleryGenerator:TakeScreenshots(shotHandlers, doneHandler)
     end
 
     --- This continues processing after a Wait() interruption.
+    --- @async
     function internalAPI:Continue()
         if isInterrupted then
             isInterrupted = false
@@ -144,7 +180,7 @@ function GalleryGenerator:TakeScreenshots(shotHandlers, doneHandler)
     end
 
     --- This shows a back screen to hide the game world.
-    --- @see https://warcraft.wiki.gg/wiki/API_TextureBase_SetColorTexture
+    --- @source https://warcraft.wiki.gg/wiki/API_TextureBase_SetColorTexture
     --- @param red nil|number Optional red component [0.0 - 1.0]
     --- @param green nil|number Optional green component [0.0 - 1.0]
     --- @param blue nil|number Optional blue component [0.0 - 1.0]
@@ -159,6 +195,42 @@ function GalleryGenerator:TakeScreenshots(shotHandlers, doneHandler)
 
         backScreen.tex:SetColorTexture(red or 0, green or 0, blue or 0, 1)
         backScreen:Show()
+    end
+
+    --- Returns the n-th element frame of an open menu.
+    --- @param menuIndex number Index number of open Menu (1=start menu, 2=first submenu, 3=second submenu...)
+    --- @param elementIndex number Index number of element from the top. Spacer and divider do count as well.
+    function internalAPI:GetOpenMenuElement(menuIndex, elementIndex)
+        if openMenus and openMenus[menuIndex] then
+            local children = {openMenus[menuIndex]:GetChildren()}
+            return children[elementIndex+2]
+        end
+    end
+
+    --- Interrupts execution and waits for menu element to be rendered. It also points onto the element.
+    --- You can chain `WaitAndPointOnMenuElement` in your `onDone` handler to traverse multiple submenus.
+    --- You need to `Continue()` in your own `onDone` function. If you don't provide a function, it continues automatically.
+    --- @async
+    --- @param menuIndex number Index number of open Menu (1=start menu, 2=first submenu, 3=second submenu...)
+    --- @param elementIndex number Index number of element from the top. Spacer and divider do count as well.
+    --- @param onDone nil|function Optional custom handling gets element frame as first parameter.
+    --- @param offsetX nil|number Optional offset right of the element center (negative for left)
+    --- @param offsetY nil|number Optional offset up of the element center (negative for down)
+    function internalAPI:WaitAndPointOnMenuElement(menuIndex, elementIndex, onDone, offsetX, offsetY)
+        self:Wait()
+        onDone = onDone or self.Continue
+
+        local ticker
+        ticker = C_Timer.NewTicker(0.1, function()
+            local element = self:GetOpenMenuElement(menuIndex, elementIndex)
+            if element then
+                ticker:Cancel()
+                self:Point(element, offsetX, offsetY)
+                C_Timer.After(0.2, function() -- wait for submenu to be rendered
+                    onDone(element)
+                end)
+            end
+        end)
     end
 
     if not cursor then
