@@ -1,4 +1,4 @@
-## Interface: 110200,110205
+## Interface: 120001
 ## Title: Gallery Generator
 ## IconTexture: 1109100
 ## Notes: Generate consistent screenshots for your image gallery
